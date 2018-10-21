@@ -11,12 +11,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var (
+	httpAddr string
+)
+
+func init() {
+	httpAddr = os.Getenv("HTTP_ADDR")
+	if httpAddr == "" {
+		httpAddr = "0.0.0.0:8080"
+	}
+}
+
 func main() {
 	r := mux.NewRouter()
 
 	srv := &http.Server{
-		// TODO: Add config for bind addr
-		Addr: "0.0.0.0:8080",
+		Addr: httpAddr,
 
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
