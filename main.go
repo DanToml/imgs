@@ -8,7 +8,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 var (
@@ -23,14 +24,34 @@ func init() {
 }
 
 func main() {
-	r := mux.NewRouter()
+	r := chi.NewRouter()
+
+	r.Use(
+		middleware.RequestID,
+		middleware.RealIP,
+		middleware.Recoverer,
+		middleware.GetHead,
+		middleware.Timeout(2*time.Second),
+		middleware.Logger,
+	)
+
+	r.Route("/api", func(r chi.Router) {
+		r.Use(
+			middleware.AllowContentType("application/json"),
+			middleware.SetHeader("Content-Type", "application/json"),
+		)
+
+		r.Get("/ping", func(rw http.ResponseWriter, req *http.Request) {
+			rw.Write([]byte("{}"))
+		})
+	})
 
 	srv := &http.Server{
 		Addr: httpAddr,
 
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
+		WriteTimeout:      15 * time.Second,
+		ReadHeaderTimeout: 15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 
 		Handler: r,
 	}
